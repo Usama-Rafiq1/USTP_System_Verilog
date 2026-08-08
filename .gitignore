@@ -1,0 +1,14 @@
+# Icarus Verilog simulation outputs (regenerate with iverilog/vvp)
+*.vvp
+*.vcd
+a.out
+sim
+*.log
+
+# OS/editor cruft
+Thumbs.db
+.DS_Store
+*.swp
+
+# Claude Code local config
+.claude/
