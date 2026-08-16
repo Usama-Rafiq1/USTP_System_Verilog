@@ -1,10 +1,3 @@
-// APB (Advanced Peripheral Bus) slave: a small register file that
-// speaks plain APB protocol (SETUP phase, then ACCESS held until
-// PREADY).
-//
-// Plain module ports on purpose here, no interface/modport and no
-// virtual interface, since the testbench only uses basic
-// SystemVerilog OOP (classes, constructors, methods).
 module apb_slave #(
     parameter DATA_WIDTH  = 32,
     parameter ADDR_WIDTH  = 32,

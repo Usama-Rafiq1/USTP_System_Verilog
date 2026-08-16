@@ -1,16 +1,3 @@
-// Testbench for apb_design.sv, built using only basic SystemVerilog
-// OOP: plain classes, constructors, and methods. No interfaces, no
-// virtual interfaces, no constrained random, no mailboxes/semaphores.
-//
-// A class object doesn't live anywhere in the module hierarchy, so a
-// class method normally can't touch a signal declared inside a module.
-// The usual fix for that is a virtual interface, which is more than
-// "basics of OOP" covers, so instead the APB bus signals are just
-// declared here at file scope, outside any module. That makes them
-// plain global variables. apb_tb wires them to the DUT, and every
-// class method below (like apb_driver.drive()) just refers to them by
-// name.
-
 logic        PCLK;
 logic        PRESETn;
 logic [31:0] PADDR;
