@@ -1,14 +1,15 @@
-// Class-based APB testbench built from basic SystemVerilog OOP only:
-// plain classes, constructors, and methods (tasks/functions), composed
-// together in the top module. No interfaces, no virtual interfaces, no
-// constrained-random, no mailboxes/semaphores.
+// Testbench for apb_design.sv, built using only basic SystemVerilog
+// OOP: plain classes, constructors, and methods. No interfaces, no
+// virtual interfaces, no constrained random, no mailboxes/semaphores.
 //
-// A class object has no fixed place in the module hierarchy, so it
-// normally can't see signals declared inside a module. To keep things
-// to basics (no virtual interfaces), the APB bus signals below are
-// declared at file scope, outside any module -- that makes them
-// ordinary global variables that both apb_tb and the classes' methods
-// can refer to directly by name.
+// A class object doesn't live anywhere in the module hierarchy, so a
+// class method normally can't touch a signal declared inside a module.
+// The usual fix for that is a virtual interface, which is more than
+// "basics of OOP" covers, so instead the APB bus signals are just
+// declared here at file scope, outside any module. That makes them
+// plain global variables. apb_tb wires them to the DUT, and every
+// class method below (like apb_driver.drive()) just refers to them by
+// name.
 
 logic        PCLK;
 logic        PRESETn;
@@ -22,7 +23,8 @@ logic [31:0] PRDATA;
 logic        PSLVERR;
 
 
-// One APB transfer: address + data going in, plus whatever comes back.
+// One APB transfer: the address and data going out, plus whatever
+// comes back on a read.
 class apb_transaction;
     logic [31:0] addr;
     logic [31:0] wdata;
@@ -47,11 +49,12 @@ endclass
 // Hands out a fixed, directed list of transactions one at a time:
 // three writes, then read-backs of the same three addresses.
 //
-// This keeps an index and hands the next transfer's fields out through
-// `output` arguments instead of building an array of apb_transaction
-// objects (or returning one from a function) -- both of those crash
-// this machine's Icarus Verilog at code-generation time (a real tool
-// bug, documented in the README).
+// This keeps a running index and hands the next transfer's fields out
+// through output arguments, instead of building an array of
+// apb_transaction objects or having next() return one. Both of those
+// crash this machine's copy of Icarus Verilog during code generation
+// (see the README for the details), so the object itself gets built
+// with new() back at the call site instead.
 class apb_generator;
     int idx = 0;
 
@@ -99,16 +102,17 @@ class apb_driver;
 endclass
 
 
-// Remembers what was last written to each register and checks read-back
-// transactions against it, keeping a running pass/fail tally.
+// Remembers what was last written to each register and checks
+// read-back transactions against it, keeping a running pass/fail
+// count.
 class apb_scoreboard;
     int pass_count = 0;
     int fail_count = 0;
 
-    // One property per register instead of an array: an unpacked array
-    // of vectors as a class property crashes this machine's Icarus
-    // Verilog at code-generation time (a real tool bug, documented in
-    // the README) -- four plain fields sidestep it.
+    // Four separate fields instead of one expected[] array. An
+    // unpacked array of vectors as a class property crashes this
+    // machine's Icarus Verilog at code-generation time (a real tool
+    // bug, see the README), and four plain fields sidestep it.
     logic [31:0] exp_reg0, exp_reg1, exp_reg2, exp_reg3;
 
     function void set_exp(logic [1:0] sel, logic [31:0] val);
@@ -131,9 +135,9 @@ class apb_scoreboard;
 
     // Bit-selecting a class property straight through a handle
     // (tr.addr[3:2]) silently returns the whole field instead of the
-    // slice on this machine's Icarus Verilog -- another real tool bug.
+    // slice on this machine's Icarus Verilog, another real tool bug.
     // Copying the field into a local variable first and slicing that
-    // works correctly.
+    // works fine.
     function void note_write(apb_transaction tr);
         logic [31:0] a;
         a = tr.addr;
@@ -146,9 +150,9 @@ class apb_scoreboard;
         exp = get_exp(a[3:2]);
         if (tr.rdata === exp) begin
             $display("  PASS: addr=%0h got=%0h", tr.addr, tr.rdata);
-            // `pass_count++` on a class property is unreliable on this
-            // machine's Icarus Verilog (stays stuck at 1) -- another
-            // real tool bug; the explicit form works correctly.
+            // pass_count++ isn't reliable here either, it stayed stuck
+            // at 1 no matter how many times it ran. The plain form
+            // below works correctly.
             pass_count = pass_count + 1;
         end else begin
             $display("  FAIL: addr=%0h got=%0h expected=%0h", tr.addr, tr.rdata, exp);

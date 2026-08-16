@@ -1,8 +1,9 @@
-// APB (Advanced Peripheral Bus) slave: a small register file that speaks
-// plain APB protocol (SETUP phase, then ACCESS held until PREADY).
+// APB (Advanced Peripheral Bus) slave: a small register file that
+// speaks plain APB protocol (SETUP phase, then ACCESS held until
+// PREADY).
 //
-// Plain module ports are used on purpose -- no `interface`/`modport` and
-// no virtual interface -- since the testbench only uses basic
+// Plain module ports on purpose here, no interface/modport and no
+// virtual interface, since the testbench only uses basic
 // SystemVerilog OOP (classes, constructors, methods).
 module apb_slave #(
     parameter DATA_WIDTH  = 32,
@@ -28,9 +29,10 @@ module apb_slave #(
     logic [7:0]            wait_cnt;
     integer                i;
 
-    // Hold PREADY low for WAIT_CYCLES extra cycles once PSEL/PENABLE
-    // are both up, so a driver that ignores PREADY and assumes a
-    // fixed-length transfer would read/write the wrong cycle.
+    // Holds PREADY low for WAIT_CYCLES extra cycles once PSEL/PENABLE
+    // are both up, so a driver that ignores PREADY and just assumes a
+    // fixed-length transfer would end up reading or writing the wrong
+    // cycle.
     always_ff @(posedge PCLK or negedge PRESETn) begin
         if (!PRESETn)
             wait_cnt <= 8'd0;
